@@ -7,6 +7,7 @@ across arbitrary input graphs rather than hand-placed shapes.
 from __future__ import annotations
 
 import networkx as nx
+import numpy as np
 from manim import Graph, Scene, Text
 
 from graph_town import style
@@ -40,9 +41,13 @@ class GraphScene(Scene):
     def build_degree_labels(self, graph: Graph, nx_graph: nx.Graph) -> dict:
         """Create degree labels for every vertex, positioned just outside each node."""
         labels = {}
+        center = graph.get_center()
         for v in nx_graph.nodes:
             vertex_mob = graph[v]
             label = self.degree_label(nx_graph.degree[v])
-            label.next_to(vertex_mob, direction=[0.6, 0.6, 0], buff=0.1)
+            outward = vertex_mob.get_center() - center
+            if np.linalg.norm(outward) < 1e-6:
+                outward = np.array([0.6,0.6, 0.0])
+            label.next_to(vertex_mob, direction=outward, buff=0.15)
             labels[v] = label
         return labels
