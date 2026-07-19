@@ -1,0 +1,5 @@
+beat_id,t_start,t_end,narration,visual_type,scene_spec,notes
+b1,0.0,8.0,"Here's our starting graph. Watch the degree of vertex 3.",static,,"Title card / graph intro, no scene_spec needed"
+b2,8.0,14.0,"Delete vertex 3, and see its neighbors' degrees drop by one.",animation,"vertex_deletion(nx_graph=g1, vertex=3)",First worked example
+b3,14.0,22.0,"A 2-switch swaps two edges without touching any degree.",animation,"two_switch(nx_graph=g1, edge1=(1, 2), edge2=(4, 5))","Second worked example, same graph object"
+b4,22.0,30.0,"So that's Havel-Hakimi in three steps.",animation,"recap(title=""Havel-Hakimi"", steps=[""Sort degrees"", ""Remove max vertex"", ""Repeat until done""])",Closing recap
