@@ -8,7 +8,7 @@ visually that no other degree changes.
 from __future__ import annotations
 
 import networkx as nx
-from manim import Create, FadeIn, Line
+from manim import Create, FadeIn
 
 from graph_town import style
 from graph_town.scenes.base import GraphScene
@@ -40,6 +40,8 @@ def animate_two_switch(
 
     old_va = _edge_mobject(graph, v, a)
     old_ub = _edge_mobject(graph, u, b)
+    key_va = (v, a) if (v, a) in graph.edges else (a, v)
+    key_ub = (u, b) if (u, b) in graph.edges else (b, u)
 
     # Isolate the two edges under scrutiny in the highlight color; everything
     # else in the graph is left untouched to make clear no other degree changes.
@@ -49,34 +51,28 @@ def animate_two_switch(
         run_time=run_time / 2,
     )
 
-    new_vu = Line(
-        graph[v].get_center(),
-        graph[u].get_center(),
-        color=style.MAGENTA,
-        stroke_width=style.EDGE_STROKE_WIDTH,
-    )
-    new_ab = Line(
-        graph[a].get_center(),
-        graph[b].get_center(),
-        color=style.MAGENTA,
-        stroke_width=style.EDGE_STROKE_WIDTH,
-    )
+    # Manim Graph keeps an ``update_edges`` updater that re-pins every edge to
+    # its dict-key endpoints each frame. Suspend it so the morph can stick,
+    # then re-key the edges before restoring the updater.
+    graph.remove_updater(graph.update_edges)
 
     scene.play(
-        old_va.animate.become(new_vu),
-        old_ub.animate.become(new_ab),
+        old_va.animate.put_start_and_end_on(graph[v].get_center(), graph[u].get_center()),
+        old_ub.animate.put_start_and_end_on(graph[a].get_center(), graph[b].get_center()),
         run_time=run_time,
     )
+
+    del graph.edges[key_va]
+    del graph.edges[key_ub]
+    graph.edges[(v, u)] = old_va
+    graph.edges[(a, b)] = old_ub
+    graph.add_updater(graph.update_edges)
+
     scene.play(
         old_va.animate.set_color(style.NAVY),
         old_ub.animate.set_color(style.NAVY),
         run_time=run_time / 2,
     )
-
-    del graph.edges[edge1 if edge1 in graph.edges else (a, v)]
-    del graph.edges[edge2 if edge2 in graph.edges else (b, u)]
-    graph.edges[(v, u)] = old_va
-    graph.edges[(a, b)] = old_ub
 
     nx_graph.remove_edge(v, a)
     nx_graph.remove_edge(u, b)
@@ -88,18 +84,20 @@ class TwoSwitchScene(GraphScene):
     """Standalone scene: build a graph, then perform one 2-switch.
 
     Set ``nx_graph``, ``edge1``, and ``edge2`` to parameterize.
+    Set ``label_kind`` to ``"degree"`` or ``"name"`` (vertex ids).
     """
 
     nx_graph: nx.Graph | None = None
     edge1: tuple | None = None
     edge2: tuple | None = None
+    label_kind: str = "name"
 
     def construct(self) -> None:
         if self.nx_graph is None or self.edge1 is None or self.edge2 is None:
             raise ValueError("TwoSwitchScene requires nx_graph, edge1, and edge2 to be set")
 
         graph = self.build_graph(self.nx_graph)
-        labels = self.build_degree_labels(graph, self.nx_graph)
+        labels = self.build_vertex_labels(graph, self.nx_graph, kind=self.label_kind)
 
         self.play(Create(graph))
         self.play(*[FadeIn(label) for label in labels.values()])

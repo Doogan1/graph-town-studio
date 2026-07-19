@@ -8,3 +8,4 @@ g = nx.petersen_graph()
 class DemoVertexDeletion(VertexDeletionScene):
     nx_graph = g
     vertex = 2
+    label_kind = "degree"
